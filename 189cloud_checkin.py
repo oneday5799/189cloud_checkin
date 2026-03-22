@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-天翼云盘签到脚本 - 青龙版
-支持多账号批量签到及抽奖，结果通过PUSH PLUS推送
+天翼云盘签到脚本
 """
 
 import time
@@ -181,14 +180,11 @@ class TianYiCloudSigner:
             print(f"登录异常: {str(e)}")
             return None
 
-    def sign_and_draw_prizes(self, session, masked_username):
-        """签到和抽奖"""
+    def sign_only(self, session, masked_username):
+        """仅签到功能"""
         try:
             rand = str(round(time.time() * 1000))
             surl = f'https://api.cloud.189.cn/mkt/userSign.action?rand={rand}&clientType=TELEANDROID&version=8.6.3&model=SM-G930K'
-            url = f'https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_SIGNIN&activityId=ACT_SIGNIN'
-            url2 = f'https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_SIGNIN_PHOTOS&activityId=ACT_SIGNIN'
-            url3 = f'https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_2022_FLDFS_KJ&activityId=ACT_SIGNIN'
 
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Linux; Android 5.1.1; SM-G930K Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/74.0.3729.136 Mobile Safari/537.36 Ecloud/8.6.3 Android/22 clientId/355325117317828 clientModel/SM-G930K imsi/460071114317824 clientChannelId/qq proVersion/1.0.6',
@@ -205,74 +201,25 @@ class TianYiCloudSigner:
 
                 if resp_json.get('isSign') is True:
                     print(f"账户 {masked_username}: 已经签到过了，签到获得{netdiskBonus}M空间")
-                    res1 = f"签到获得{netdiskBonus}M空间(重复签到)"
+                    result = f"签到获得{netdiskBonus}M空间(重复签到)"
                 else:
                     print(f"账户 {masked_username}: 签到成功，签到获得{netdiskBonus}M空间")
-                    res1 = f"签到获得{netdiskBonus}M空间"
+                    result = f"签到获得{netdiskBonus}M空间"
             else:
                 print(f"账户 {masked_username}: 签到请求失败")
-                res1 = "签到请求失败"
-
-            # 第一次抽奖
-            response = session.get(url, headers=headers)
-            if response.status_code == 200:
-                if "errorCode" in response.text:
-                    print(f"账户 {masked_username}: 抽奖失败,次数不足")
-                    res2 = "抽奖失败,次数不足"
-                else:
-                    prizeName = response.json().get('prizeName', '未知奖励')
-                    print(f"账户 {masked_username}: 第1次抽奖获得{prizeName}")
-                    res2 = f"第1次抽奖获得{prizeName}"
-            else:
-                print(f"账户 {masked_username}: 第1次抽奖请求失败")
-                res2 = "第1次抽奖请求失败"
-
-            # 第二次抽奖
-            time.sleep(5)
-            response = session.get(url2, headers=headers)
-            if response.status_code == 200:
-                if "errorCode" in response.text:
-                    print(f"账户 {masked_username}: 第2次抽奖失败,次数不足")
-                    res3 = "第2次抽奖失败,次数不足"
-                else:
-                    prizeName = response.json().get('prizeName', '未知奖励')
-                    print(f"账户 {masked_username}: 第2次抽奖获得{prizeName}")
-                    res3 = f"第2次抽奖获得{prizeName}"
-            else:
-                print(f"账户 {masked_username}: 第2次抽奖请求失败")
-                res3 = "第2次抽奖请求失败"
-
-            # 第三次抽奖
-            time.sleep(5)
-            response = session.get(url3, headers=headers)
-            if response.status_code == 200:
-                if "errorCode" in response.text:
-                    print(f"账户 {masked_username}: 第3次抽奖失败,次数不足")
-                    res4 = "第3次抽奖失败,次数不足"
-                else:
-                    prizeName = response.json().get('prizeName', '未知奖励')
-                    print(f"账户 {masked_username}: 第3次抽奖获得{prizeName}")
-                    res4 = f"第3次抽奖获得{prizeName}"
-            else:
-                print(f"账户 {masked_username}: 第3次抽奖请求失败")
-                res4 = "第3次抽奖请求失败"
-
-            # 输出结果
-            result_list = [res1, res2, res3, res4]
-            result_string = " | ".join(result_list)
-            print(f"账户 {masked_username} 处理完成: {result_string}")
+                result = "签到请求失败"
 
             # 记录推送结果
             account_result = {
                 'username': masked_username,
-                'result': result_string
+                'result': result
             }
             self.push_results.append(account_result)
 
-            return result_string
+            return result
 
         except Exception as e:
-            print(f"账户 {masked_username} 签到抽奖异常: {str(e)}")
+            print(f"账户 {masked_username} 签到异常: {str(e)}")
             result = f"异常: {str(e)}"
 
             # 记录推送结果
@@ -355,8 +302,8 @@ class TianYiCloudSigner:
             # 登录
             session = self.login(username, password)
             if session:
-                # 签到和抽奖
-                result = self.sign_and_draw_prizes(session, masked_username)
+                # 仅签到
+                result = self.sign_only(session, masked_username)
             else:
                 print(f"账户 {masked_username} 登录失败，跳过后续操作")
                 account_result = {
