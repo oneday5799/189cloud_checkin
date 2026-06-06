@@ -1,3 +1,5 @@
+本项目已停止维护，推荐使用<a href="[超链接地址](https://github.com/wes-lin/Cloud189Checkin)" title="Cloud189Checkin">Cloud189Checkin</a>
+
 # 天翼云盘自动签到脚本
 
 ## 简介
